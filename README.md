@@ -1,4 +1,4 @@
-# shoot
+# Point Guard
 unix password store compatible password manager written in rust
 
 ## Why?
