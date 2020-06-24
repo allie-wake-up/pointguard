@@ -1,5 +1,7 @@
 use clap::Clap;
 
+mod show;
+
 /// This doc string acts as a help message when the user runs '--help'
 /// as do all doc strings on fields
 #[derive(Clap)]
@@ -23,6 +25,7 @@ enum SubCommand {
     Test(Test),
     #[clap(name="show", aliases = &["ls", "show"])]
     List(List),
+    None(List),
 }
 
 /// A subcommand for controlling testing
@@ -55,19 +58,16 @@ fn main() {
 
     // You can handle information about subcommands by requesting their matches by name
     // (as below), requesting just the name used, or both at the same time
-    match opts.subcmd {
-        Some(cmd) => match cmd {
-            SubCommand::Test(t) => {
-                if t.debug {
-                    println!("Printing debug info...");
-                } else {
-                    println!("Printing normally...");
-                }
+    match opts.subcmd.unwrap_or(SubCommand::None(List {})) {
+        SubCommand::Test(t) => {
+            if t.debug {
+                println!("Printing debug info...");
+            } else {
+                println!("Printing normally...");
             }
-            SubCommand::List(t) => {
-                println!("Print out the password files");
-            }
-        },
-        None => println!("Print out the password files")
+        }
+        SubCommand::List(_t) | SubCommand::None(_t) => {
+            show::show();
+        }
     }
 }
