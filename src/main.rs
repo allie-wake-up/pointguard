@@ -1,6 +1,9 @@
-use clap::Clap;
-
+mod settings;
 mod show;
+
+use clap::Clap;
+use settings::Settings;
+
 
 /// This doc string acts as a help message when the user runs '--help'
 /// as do all doc strings on fields
@@ -24,8 +27,7 @@ enum SubCommand {
     #[clap(name = "test")]
     Test(Test),
     #[clap(name="show", aliases = &["ls", "show"])]
-    List(List),
-    None(List),
+    Show(Show),
 }
 
 /// A subcommand for controlling testing
@@ -38,7 +40,7 @@ struct Test {
 
 /// A subcommand for listing password files
 #[derive(Clap)]
-struct List {}
+struct Show {}
 
 fn main() {
     let opts: Opts = Opts::parse();
@@ -56,9 +58,13 @@ fn main() {
         3 | _ => println!("Don't be crazy"),
     }
 
+    let settings = Settings::new();
+    let settings = settings.unwrap();
+    println!("{:?}", settings);
+
     // You can handle information about subcommands by requesting their matches by name
     // (as below), requesting just the name used, or both at the same time
-    match opts.subcmd.unwrap_or(SubCommand::None(List {})) {
+    match opts.subcmd.unwrap_or(SubCommand::Show(Show {})) {
         SubCommand::Test(t) => {
             if t.debug {
                 println!("Printing debug info...");
@@ -66,7 +72,7 @@ fn main() {
                 println!("Printing normally...");
             }
         }
-        SubCommand::List(_t) | SubCommand::None(_t) => {
+        SubCommand::Show(_t) => {
             show::show();
         }
     }
