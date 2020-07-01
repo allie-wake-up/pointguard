@@ -4,7 +4,6 @@ mod show;
 use clap::Clap;
 use settings::Settings;
 
-
 /// This doc string acts as a help message when the user runs '--help'
 /// as do all doc strings on fields
 #[derive(Clap)]
@@ -13,7 +12,7 @@ struct Opts {
     /// Sets a custom config file. Could have been an Option<T> with no default too
     #[clap(short, long, default_value = "default.conf")]
     config: String,
-    /// Some input. Because this isn't an Option<T> it's required to be used
+    /// Some input
     input: Option<String>,
     /// A level of verbosity, and can be used multiple times
     #[clap(short, long, parse(from_occurrences))]
@@ -40,14 +39,16 @@ struct Test {
 
 /// A subcommand for listing password files
 #[derive(Clap)]
-struct Show {}
+struct Show {
+    /// Some input
+    input: Option<String>,
+}
 
 fn main() {
     let opts: Opts = Opts::parse();
 
     // Gets a value for config if supplied by user, or defaults to "default.conf"
     println!("Value for config: {}", opts.config);
-    println!("Using input file: {}", opts.input.unwrap_or_default());
 
     // Vary the output based on how many times the user used the "verbose" flag
     // (i.e. 'myprog -v -v -v' or 'myprog -vvv' vs 'myprog -v'
@@ -60,11 +61,10 @@ fn main() {
 
     let settings = Settings::new();
     let settings = settings.unwrap();
-    println!("{:?}", settings);
 
     // You can handle information about subcommands by requesting their matches by name
     // (as below), requesting just the name used, or both at the same time
-    match opts.subcmd.unwrap_or(SubCommand::Show(Show {})) {
+    match opts.subcmd.unwrap_or(SubCommand::Show(Show { input: opts.input })) {
         SubCommand::Test(t) => {
             if t.debug {
                 println!("Printing debug info...");
@@ -72,8 +72,8 @@ fn main() {
                 println!("Printing normally...");
             }
         }
-        SubCommand::Show(_t) => {
-            show::show();
+        SubCommand::Show(opts) => {
+            show::show(settings, opts.input).unwrap_or_else(|e| eprintln!("Error: {}", e));
         }
     }
 }

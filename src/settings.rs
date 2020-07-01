@@ -4,10 +4,10 @@ use std::{collections::HashMap, path::PathBuf};
 
 #[derive(Debug)]
 pub struct Settings {
-    dir: PathBuf,
-    clip_time: u32,
-    generated_length: u32,
-    editor: String,
+    pub dir: PathBuf,
+    pub clip_time: u32,
+    pub generated_length: u32,
+    pub editor: String,
 }
 
 const CLIP_TIME: u32 = 45;
