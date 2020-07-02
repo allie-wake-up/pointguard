@@ -63,9 +63,9 @@ impl Settings {
             Some(dir) => Some(PathBuf::from(dir)),
             None => None,
         };
-        let dir = dir.or(get_point_guard_default_dir(&proj_dirs));
-        let dir = dir.or(get_pass_default_dir());
-        if let None = dir {
+        let dir = dir.or_else(|| get_point_guard_default_dir(&proj_dirs));
+        let dir = dir.or_else(get_pass_default_dir);
+        if dir.is_none() {
             return Err(ConfigError::Message(String::from(
                 "Password directory could not be found",
             )));
@@ -81,7 +81,7 @@ impl Settings {
                 Some(length) => length.parse().unwrap_or(GENERATED_LENGTH),
                 None => GENERATED_LENGTH,
             },
-            editor: map.remove("editor").unwrap_or(String::from(EDITOR)),
+            editor: map.remove("editor").unwrap_or_else(|| String::from(EDITOR)),
         })
     }
 }

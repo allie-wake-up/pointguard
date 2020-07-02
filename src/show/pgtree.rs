@@ -49,7 +49,7 @@ impl Tree {
     fn new(root: String) -> Tree {
         Tree {
             depth: 0,
-            file_stem: String::from(root),
+            file_stem: root,
             children: vec![],
         }
     }
