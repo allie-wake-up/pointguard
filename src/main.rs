@@ -1,3 +1,4 @@
+mod gpg;
 mod settings;
 mod show;
 
@@ -56,7 +57,7 @@ fn main() {
         0 => println!("No verbose info"),
         1 => println!("Some verbose info"),
         2 => println!("Tons of verbose info"),
-        3 | _ => println!("Don't be crazy"),
+        _ => println!("Don't be crazy"),
     }
 
     let settings = Settings::new();
@@ -73,7 +74,7 @@ fn main() {
             }
         }
         SubCommand::Show(opts) => {
-            show::show(settings, opts.input).unwrap_or_else(|e| eprintln!("Error: {}", e));
+            show::show(opts.input, settings).unwrap_or_else(|e| eprintln!("Error: {}", e));
         }
     }
 }
