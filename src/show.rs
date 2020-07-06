@@ -77,7 +77,7 @@ fn show_password(file: &Path) -> Result<()> {
 pub fn show(input: Option<String>, settings: Settings) -> Result<()> {
     let path = match &input {
         Some(name) => settings.dir.join(name),
-        None => settings.dir.clone(),
+        None => settings.dir,
     };
     let file = path.with_extension("gpg");
     if !path.exists() && !file.exists() {
