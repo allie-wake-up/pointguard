@@ -21,6 +21,9 @@ pub fn decrypt(path: &Path) -> Result<String, PointGuardError> {
         Ok(result)
     } else {
         let error = String::from_utf8(output.stderr)?;
-        Err(PointGuardError::GpgError(output.status.code().unwrap_or(1), error))
+        Err(PointGuardError::GpgError(
+            output.status.code().unwrap_or(1),
+            error,
+        ))
     }
 }
