@@ -61,12 +61,13 @@ fn print_tree(path: &Path, input: Option<String>) -> Result<()> {
     Ok(())
 }
 
-pub fn show(opts: Show, settings: Settings) -> Result<()> {
+pub fn show(buffer: &mut dyn io::Write, opts: Show, settings: Settings) -> Result<()> {
     let path = match &opts.input {
         Some(name) => settings.dir.join(name),
         None => settings.dir,
     };
     let file = path.with_extension("gpg");
+    println!("path: {:?}, file: {:?}", path, file);
     if !path.exists() && !file.exists() {
         return Err(io::Error::new(
             io::ErrorKind::NotFound,
@@ -81,7 +82,46 @@ pub fn show(opts: Show, settings: Settings) -> Result<()> {
         print_tree(&path, opts.input)
     } else {
         let pw = gpg::decrypt(&file)?;
-        println!("{}", pw);
+        write!(buffer, "{}", pw)?;
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    fn get_test_settings() -> Settings {
+        Settings {
+            dir: PathBuf::from("test-store-enc"),
+            clip_time: 45,
+            generated_length: 25,
+            editor: String::from("vim"),
+        }
+    }
+
+    #[test]
+    fn print_password() {
+        let mut result: Vec<u8> = vec![];
+        show(
+            &mut result,
+            Show::new(Some(String::from("test"))),
+            get_test_settings(),
+        )
+        .unwrap();
+        assert_eq!(String::from_utf8(result).unwrap().trim(), "password");
+    }
+
+    #[test]
+    fn print_website_password() {
+        let mut result: Vec<u8> = vec![];
+        show(
+            &mut result,
+            Show::new(Some(String::from("pointguard.dev"))),
+            get_test_settings(),
+        )
+        .unwrap();
+        assert_eq!(String::from_utf8(result).unwrap().trim(), "password");
     }
 }
