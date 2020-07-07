@@ -19,7 +19,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Run clippy
+    - name: Setup rust toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        components: rustfmt, clippy
+    - name: Clippy
       run: cargo clippy
     - name: RustFmt
       run: cargo fmt -- --check
