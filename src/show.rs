@@ -1,7 +1,8 @@
-use crate::settings::Settings;
+use crate::error::Result;
 use crate::gpg;
+use crate::opts::Show;
+use crate::settings::Settings;
 use ptree::output;
-use std::io::{Error, ErrorKind, Result, Write};
 use std::io;
 use std::path::Path;
 use walkdir::{DirEntry, WalkDir};
@@ -20,15 +21,11 @@ fn is_hidden(entry: &DirEntry) -> bool {
 fn display_path(path: &Path) -> Result<String> {
     Ok(path
         .file_stem()
-        .ok_or_else(|| Error::new(
-            ErrorKind::InvalidData,
-            "Found a file with no name",
-        ))?
+        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "Found a file with no name"))?
         .to_str()
-        .ok_or_else(|| Error::new(
-            ErrorKind::InvalidData,
-            "File name is not valid unicode",
-        ))?
+        .ok_or_else(|| {
+            io::Error::new(io::ErrorKind::InvalidData, "File name is not valid unicode")
+        })?
         .to_string())
 }
 
@@ -64,34 +61,27 @@ fn print_tree(path: &Path, input: Option<String>) -> Result<()> {
     Ok(())
 }
 
-fn show_password(file: &Path) -> Result<()> {
-    let output = gpg::decrypt(&file)?;
-    if output.status.success() {
-        io::stdout().write_all(&output.stdout)?;
-    } else {
-        io::stderr().write_all(&output.stderr)?;
-    }
-    Ok(())
-}
-
-pub fn show(input: Option<String>, settings: Settings) -> Result<()> {
-    let path = match &input {
+pub fn show(opts: Show, settings: Settings) -> Result<()> {
+    let path = match &opts.input {
         Some(name) => settings.dir.join(name),
         None => settings.dir,
     };
     let file = path.with_extension("gpg");
     if !path.exists() && !file.exists() {
-        return Err(Error::new(
-            ErrorKind::NotFound,
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
             format!(
                 "{} is not in the point guard password store.",
-                input.unwrap_or_else(|| String::from("File or folder"))
+                opts.input.unwrap_or_else(|| String::from("File or folder"))
             ),
-        ));
+        )
+        .into());
     }
     if path.is_dir() {
-        print_tree(&path, input)
+        print_tree(&path, opts.input)
     } else {
-        show_password(&file)
+        let pw = gpg::decrypt(&file)?;
+        println!("{}", pw);
+        Ok(())
     }
 }
