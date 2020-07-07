@@ -3,7 +3,8 @@ use clap::Clap;
 fn main() {
     let opts: pg::Opts = pg::Opts::parse();
     let settings = pg::Settings::new().unwrap();
-    match pg::run(opts, settings) {
+    let mut stdout = std::io::stdout();
+    match pg::run(&mut stdout, opts, settings) {
         Ok(_) => (),
         Err(e) => match e {
             pg::PointGuardError::GpgError(status, message) => {
