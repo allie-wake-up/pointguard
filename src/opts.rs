@@ -42,9 +42,6 @@ pub struct Show {
 
 impl Show {
     pub fn new(input: Option<String>) -> Self {
-        Show {
-            input
-        }
+        Show { input }
     }
 }
-
