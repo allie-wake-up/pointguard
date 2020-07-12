@@ -62,11 +62,13 @@ fn print_tree(path: &Path, input: Option<String>) -> Result<()> {
 }
 
 pub fn show(buffer: &mut dyn io::Write, opts: Show, settings: Settings) -> Result<()> {
-    let path = match &opts.input {
-        Some(name) => settings.dir.join(name),
-        None => settings.dir,
+    let (path, file) = match &opts.input {
+        Some(name) => (
+            settings.dir.join(name),
+            settings.dir.join(name.to_owned() + ".gpg"),
+        ),
+        None => (settings.dir.clone(), settings.dir),
     };
-    let file = path.with_extension("gpg");
     println!("path: {:?}, file: {:?}", path, file);
     if !path.exists() && !file.exists() {
         return Err(io::Error::new(
