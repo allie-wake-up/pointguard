@@ -8,7 +8,7 @@ pub use error::PointGuardError;
 pub use opts::{Opts, Show, SubCommand};
 pub use settings::Settings;
 
-pub fn run(opts: Opts, settings: Settings) -> error::Result<()> {
+pub fn run(buffer: &mut dyn std::io::Write, opts: Opts, settings: Settings) -> error::Result<()> {
     let input = opts.input;
     match opts
         .subcmd
@@ -23,6 +23,6 @@ pub fn run(opts: Opts, settings: Settings) -> error::Result<()> {
                 Ok(())
             }
         }
-        SubCommand::Show(show_opts) => show::show(show_opts, settings),
+        SubCommand::Show(show_opts) => show::show(buffer, show_opts, settings),
     }
 }
