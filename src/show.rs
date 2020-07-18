@@ -29,7 +29,7 @@ fn display_path(path: &Path) -> Result<String> {
         .to_string())
 }
 
-fn print_tree(path: &Path, input: Option<String>) -> Result<()> {
+fn print_tree(buffer: &mut dyn io::Write, path: &Path, input: Option<String>) -> Result<()> {
     let mut builder =
         TreeBuilder::new(input.unwrap_or_else(|| String::from("Point Guard Password Store")));
     let walker = WalkDir::new(&path).into_iter();
@@ -57,7 +57,7 @@ fn print_tree(path: &Path, input: Option<String>) -> Result<()> {
     }
     let mut root = builder.build();
     root.sort();
-    output::print_tree(&root)?;
+    output::write_tree(&root, buffer)?;
     Ok(())
 }
 
@@ -69,23 +69,21 @@ pub fn show(buffer: &mut dyn io::Write, opts: Show, settings: Settings) -> Resul
         ),
         None => (settings.dir.clone(), settings.dir),
     };
-    println!("path: {:?}, file: {:?}", path, file);
-    if !path.exists() && !file.exists() {
-        return Err(io::Error::new(
+    if file.exists() && !file.is_dir() {
+        let pw = gpg::decrypt(&file)?;
+        write!(buffer, "{}", pw)?;
+        Ok(())
+    } else if path.is_dir() {
+        print_tree(buffer, &path, opts.input)
+    } else {
+        Err(io::Error::new(
             io::ErrorKind::NotFound,
             format!(
                 "{} is not in the point guard password store.",
                 opts.input.unwrap_or_else(|| String::from("File or folder"))
             ),
         )
-        .into());
-    }
-    if path.is_dir() {
-        print_tree(&path, opts.input)
-    } else {
-        let pw = gpg::decrypt(&file)?;
-        write!(buffer, "{}", pw)?;
-        Ok(())
+        .into())
     }
 }
 
@@ -112,7 +110,7 @@ mod tests {
             get_test_settings(),
         )
         .unwrap();
-        assert_eq!(String::from_utf8(result).unwrap().trim(), "password");
+        assert_eq!(String::from_utf8(result).unwrap().trim(), "test");
     }
 
     #[test]
@@ -124,6 +122,58 @@ mod tests {
             get_test_settings(),
         )
         .unwrap();
-        assert_eq!(String::from_utf8(result).unwrap().trim(), "password");
+        assert_eq!(String::from_utf8(result).unwrap().trim(), "pointguard.dev");
+    }
+
+    #[test]
+    fn print_password_with_same_name_as_dir() {
+        let mut result: Vec<u8> = vec![];
+        show(
+            &mut result,
+            Show::new(Some(String::from("dir"))),
+            get_test_settings(),
+        )
+        .unwrap();
+        assert_eq!(String::from_utf8(result).unwrap().trim(), "dir");
+    }
+
+    #[test]
+    fn print_password_in_dir() {
+        let mut result: Vec<u8> = vec![];
+        show(
+            &mut result,
+            Show::new(Some(String::from("dir/test"))),
+            get_test_settings(),
+        )
+        .unwrap();
+        assert_eq!(String::from_utf8(result).unwrap().trim(), "dir/test");
+    }
+
+    #[test]
+    fn print_root_tree() {
+        let mut result: Vec<u8> = vec![];
+        show(&mut result, Show::new(None), get_test_settings()).unwrap();
+        let result_string = String::from_utf8(result).unwrap();
+        assert!(result_string.contains("test"));
+        assert!(result_string.contains("pointguard.dev"));
+        assert!(result_string.contains("dir"));
+        assert!(result_string.contains("unique"));
+        assert!(!result_string.contains("notinstore"));
+    }
+
+    #[test]
+    fn print_tree_with_same_name_as_password() {
+        let mut result: Vec<u8> = vec![];
+        show(
+            &mut result,
+            Show::new(Some(String::from("dir/"))),
+            get_test_settings(),
+        )
+        .unwrap();
+        let result_string = String::from_utf8(result).unwrap();
+        assert!(result_string.contains("test"));
+        assert!(result_string.contains("unique"));
+        assert!(result_string.contains("dir"));
+        assert!(!result_string.contains("notinstore"));
     }
 }
