@@ -36,12 +36,18 @@ pub struct Test {
 /// A subcommand for listing password files
 #[derive(Clap)]
 pub struct Show {
-    /// Some input
+    /// A password file or directory to display
     pub input: Option<String>,
+    /// Copy to clipboard instead of printing
+    #[clap(name="clip", long, short)]
+    pub clip: bool,
+    /// Line number to print or copy (starts with 1).
+    #[clap(name="line", long, short)]
+    pub line: Option<i32>,
 }
 
 impl Show {
     pub fn new(input: Option<String>) -> Self {
-        Show { input }
+        Show { input, clip: false, line: None }
     }
 }

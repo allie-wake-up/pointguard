@@ -1,7 +1,10 @@
-use crate::error::Result;
+use crate::error::{PointGuardError, Result};
 use crate::gpg;
 use crate::opts::Show;
 use crate::settings::Settings;
+use anyhow::anyhow;
+use cli_clipboard;
+use fork::{fork, Fork};
 use ptree::output;
 use std::io;
 use std::path::Path;
@@ -71,8 +74,30 @@ pub fn show(buffer: &mut dyn io::Write, opts: Show, settings: Settings) -> Resul
     };
     if file.exists() && !file.is_dir() {
         let pw = gpg::decrypt(&file)?;
-        write!(buffer, "{}", pw)?;
-        Ok(())
+        if opts.clip {
+            match fork() {
+                Ok(Fork::Parent(_)) => {
+                    write!(
+                        buffer,
+                        "Copied {} to clipboard. Will clear in {} seconds.",
+                        opts.input.unwrap(),
+                        settings.clip_time
+                    )?;
+                    Ok(())
+                }
+                Ok(Fork::Child) => {
+                    cli_clipboard::set_contents(pw.lines().next().unwrap().to_owned()).unwrap();
+                    std::thread::sleep(std::time::Duration::from_secs(settings.clip_time.into()));
+                    std::process::exit(0);
+                }
+                Err(_e) => Err(PointGuardError::Other(anyhow!(
+                    "Error copying to clipboard"
+                ))),
+            }
+        } else {
+            write!(buffer, "{}", pw)?;
+            Ok(())
+        }
     } else if path.is_dir() {
         print_tree(buffer, &path, opts.input)
     } else {
