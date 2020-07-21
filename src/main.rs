@@ -1,13 +1,13 @@
 use clap::Clap;
 
 fn main() {
-    let opts: pg::Opts = pg::Opts::parse();
-    let settings = pg::Settings::new().unwrap();
+    let opts: pointguard::Opts = pointguard::Opts::parse();
+    let settings = pointguard::Settings::new().unwrap();
     let mut stdout = std::io::stdout();
-    match pg::run(&mut stdout, opts, settings) {
+    match pointguard::run(&mut stdout, opts, settings) {
         Ok(_) => (),
         Err(e) => match e {
-            pg::PointGuardError::GpgError(status, message) => {
+            pointguard::PointGuardError::GpgError(status, message) => {
                 eprintln!("GPG Error: {}", message);
                 std::process::exit(status);
             }
