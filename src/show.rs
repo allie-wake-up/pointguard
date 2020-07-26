@@ -1,10 +1,15 @@
-use crate::error::Result;
+use crate::error::{PointGuardError, Result};
 use crate::gpg;
 use crate::opts::Show;
 use crate::settings::Settings;
+use anyhow::anyhow;
 use ptree::output;
-use std::io;
-use std::path::Path;
+use std::{
+    env,
+    io::{self, Write},
+    path::Path,
+    process::{Command, Stdio},
+};
 use walkdir::{DirEntry, WalkDir};
 
 mod pgtree;
@@ -72,10 +77,19 @@ pub fn show(buffer: &mut dyn io::Write, opts: Show, settings: Settings) -> Resul
     if file.exists() && !file.is_dir() {
         let pw = gpg::decrypt(&file)?;
         if opts.clip {
-            cli_clipboard::set_contents_for_duration(
-                pw.lines().next().unwrap().to_owned(),
-                Some(std::time::Duration::from_secs(settings.clip_time.into())),
+            let exe = env::current_exe()?;
+            let mut child = Command::new(exe)
+                .arg("clip")
+                .stdin(Stdio::piped())
+                .spawn()?;
+            let child_stdin = child.stdin.as_mut();
+            let child_stdin = child_stdin.ok_or_else(|| {
+                PointGuardError::Other(anyhow!("Error launching child to copy to clipboard."))
+            })?;
+            let pw = pw.lines().next().ok_or_else(|| 
+                PointGuardError::Other(anyhow!("Error reading the line from the password file."))
             )?;
+            child_stdin.write_all(pw.as_bytes())?;
             writeln!(
                 buffer,
                 "Copied {} to clipboard. Will clear in {} seconds.",

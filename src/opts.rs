@@ -19,19 +19,15 @@ pub struct Opts {
 
 #[derive(Clap)]
 pub enum SubCommand {
-    #[clap(name = "test")]
-    Test(Test),
+    #[clap(name = "clip")]
+    Clip,
     #[clap(name="show", aliases = &["ls", "show"])]
     Show(Show),
 }
 
-/// A subcommand for controlling testing
+/// A subcommand for copying to the clipboard
 #[derive(Clap)]
-pub struct Test {
-    /// Print debug info
-    #[clap(short)]
-    pub debug: bool,
-}
+pub struct Clip {}
 
 /// A subcommand for listing password files
 #[derive(Clap)]

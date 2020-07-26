@@ -5,12 +5,12 @@ use std::{collections::HashMap, path::PathBuf};
 #[derive(Debug)]
 pub struct Settings {
     pub dir: PathBuf,
-    pub clip_time: u32,
+    pub clip_time: u64,
     pub generated_length: u32,
     pub editor: String,
 }
 
-const CLIP_TIME: u32 = 45;
+const CLIP_TIME: u64 = 45;
 const GENERATED_LENGTH: u32 = 25;
 const EDITOR: &str = "vim";
 
