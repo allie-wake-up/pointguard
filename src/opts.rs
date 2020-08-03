@@ -39,15 +39,19 @@ pub struct Show {
     /// A password file or directory to display
     pub input: Option<String>,
     /// Copy to clipboard instead of printing
-    #[clap(name="clip", long, short)]
+    #[clap(name = "clip", long, short)]
     pub clip: bool,
     /// Line number to print or copy (starts with 1).
-    #[clap(name="line", long, short)]
-    pub line: Option<i32>,
+    #[clap(name = "line", long, short)]
+    pub line: Option<usize>,
 }
 
 impl Show {
     pub fn new(input: Option<String>) -> Self {
-        Show { input, clip: false, line: None }
+        Show {
+            input,
+            clip: false,
+            line: None,
+        }
     }
 }

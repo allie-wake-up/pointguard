@@ -1,7 +1,7 @@
 use crate::error::Result;
 use crate::opts::Clip;
-use std::io::{self, Read};
 use cli_clipboard::{ClipboardContext, ClipboardProvider};
+use std::io::{self, Read};
 
 pub fn clip(opts: Clip) -> Result<()> {
     let mut clipboard = ClipboardContext::new()?;

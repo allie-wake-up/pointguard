@@ -1,7 +1,9 @@
 use ptree::item::TreeItem;
 use ptree::style::Style;
 use std::borrow::Cow;
-use std::io::{Result, Write};
+use std::io::{self, Result, Write};
+use std::path::Path;
+use walkdir::{DirEntry, WalkDir};
 
 #[derive(Debug)]
 pub struct TreeBuilder {
@@ -78,5 +80,85 @@ impl TreeItem for Tree {
 
     fn children(&self) -> Cow<[Self::Child]> {
         Cow::from(&self.children)
+    }
+}
+
+fn is_hidden(entry: &DirEntry) -> bool {
+    entry
+        .file_name()
+        .to_str()
+        .map(|s| s.starts_with('.'))
+        .unwrap_or(false)
+}
+
+fn display_path(path: &Path) -> Result<String> {
+    Ok(path
+        .file_stem()
+        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "Found a file with no name"))?
+        .to_str()
+        .ok_or_else(|| {
+            io::Error::new(io::ErrorKind::InvalidData, "File name is not valid unicode")
+        })?
+        .to_string())
+}
+
+pub fn build_tree(path: &Path, input: Option<String>) -> Result<Tree> {
+    let mut builder =
+        TreeBuilder::new(input.unwrap_or_else(|| String::from("Point Guard Password Store")));
+    let walker = WalkDir::new(&path).into_iter();
+    let mut depth = 1;
+    for entry in walker.filter_entry(|e| !is_hidden(e)) {
+        let entry = match entry {
+            Ok(entry) => entry,
+            // TODO: should this return an error?
+            Err(_e) => continue,
+        };
+        if entry.depth() == 0 {
+            continue;
+        }
+        let path = entry.path();
+        if entry.depth() == depth {
+            if path.is_dir() {
+                builder.begin_child(display_path(path)?);
+                depth += 1;
+            } else {
+                builder.add_empty_child(display_path(path)?);
+            }
+        } else {
+            builder.end_child();
+            depth -= 1;
+            if path.is_dir() {
+                builder.begin_child(display_path(path)?);
+                depth += 1;
+            } else {
+                builder.add_empty_child(display_path(path)?);
+            }
+        }
+    }
+    let mut root = builder.build();
+    root.sort();
+    Ok(root)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    #[test]
+    fn build_tree_test() {
+        let mut tree = build_tree(&PathBuf::from("test-store-enc"), None).unwrap();
+        tree.sort();
+        assert_eq!(tree.file_stem, "Point Guard Password Store");
+        assert_eq!(tree.children.len(), 6);
+        assert_eq!(tree.children[0].file_stem, "dir");
+        assert_eq!(tree.children[0].children.len(), 0);
+        assert_eq!(tree.children[1].file_stem, "dir");
+        assert_eq!(tree.children[1].children.len(), 2);
+        assert_eq!(tree.children[1].children[0].file_stem, "test");
+        assert_eq!(tree.children[1].children[0].children.len(), 0);
+        assert_eq!(tree.children[2].file_stem, "empty");
+        assert_eq!(tree.children[3].file_stem, "empty1");
+        assert_eq!(tree.children[4].file_stem, "pointguard.dev");
     }
 }

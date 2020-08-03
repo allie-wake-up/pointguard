@@ -1,0 +1,67 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'pointguard'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=pointguard"
+                ],
+                "filter": {
+                    "name": "pointguard",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'pg'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=pg",
+                    "--package=pointguard"
+                ],
+                "filter": {
+                    "name": "pg",
+                    "kind": "bin"
+                }
+            },
+            "args": ["show"],
+            "env": {
+                "POINT_GUARD_DIR": "${workspaceFolder}/test-store-enc"
+            },
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'pg'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=pg",
+                    "--package=pointguard"
+                ],
+                "filter": {
+                    "name": "pg",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
