@@ -8,26 +8,30 @@ pub struct Opts {
     /// Sets a custom config file. Could have been an Option<T> with no default too
     // #[clap(short, long, default_value = "default.conf")]
     // config: String,
-    /// Some input
-    pub input: Option<String>,
     /// A level of verbosity, and can be used multiple times
     // #[clap(short, long, parse(from_occurrences))]
     // verbose: i32,
     #[clap(subcommand)]
     pub subcmd: Option<SubCommand>,
+    #[clap(flatten)]
+    pub show: Show,
 }
 
 #[derive(Clap)]
 pub enum SubCommand {
     #[clap(name = "clip")]
-    Clip,
+    Clip(Clip),
     #[clap(name="show", aliases = &["ls", "show"])]
     Show(Show),
 }
 
 /// A subcommand for copying to the clipboard
 #[derive(Clap)]
-pub struct Clip {}
+pub struct Clip {
+    /// The number of seconds to copy the input
+    /// for before clearing the clipboard
+    pub clip_time: u64,
+}
 
 /// A subcommand for listing password files
 #[derive(Clap)]

@@ -66,6 +66,30 @@ fn print_tree(buffer: &mut dyn io::Write, path: &Path, input: Option<String>) ->
     Ok(())
 }
 
+fn clip(buffer: &mut dyn io::Write, pw: String, clip_time: u64, opts: Show) -> Result<()> {
+    let exe = env::current_exe()?;
+    let mut child = Command::new(exe)
+        .arg("clip")
+        .arg(clip_time.to_string())
+        .stdin(Stdio::piped())
+        .spawn()?;
+    let child_stdin = child.stdin.as_mut();
+    let child_stdin = child_stdin.ok_or_else(|| {
+        PointGuardError::Other(anyhow!("Error launching child to copy to clipboard."))
+    })?;
+    let pw = pw.lines().next().ok_or_else(|| 
+        PointGuardError::Other(anyhow!("Error reading the line from the password file."))
+    )?;
+    child_stdin.write_all(pw.as_bytes())?;
+    writeln!(
+        buffer,
+        "Copied {} to clipboard. Will clear in {} seconds.",
+        opts.input.unwrap(),
+        clip_time
+    )?;
+    Ok(())
+}
+
 pub fn show(buffer: &mut dyn io::Write, opts: Show, settings: Settings) -> Result<()> {
     let (path, file) = match &opts.input {
         Some(name) => (
@@ -77,26 +101,7 @@ pub fn show(buffer: &mut dyn io::Write, opts: Show, settings: Settings) -> Resul
     if file.exists() && !file.is_dir() {
         let pw = gpg::decrypt(&file)?;
         if opts.clip {
-            let exe = env::current_exe()?;
-            let mut child = Command::new(exe)
-                .arg("clip")
-                .stdin(Stdio::piped())
-                .spawn()?;
-            let child_stdin = child.stdin.as_mut();
-            let child_stdin = child_stdin.ok_or_else(|| {
-                PointGuardError::Other(anyhow!("Error launching child to copy to clipboard."))
-            })?;
-            let pw = pw.lines().next().ok_or_else(|| 
-                PointGuardError::Other(anyhow!("Error reading the line from the password file."))
-            )?;
-            child_stdin.write_all(pw.as_bytes())?;
-            writeln!(
-                buffer,
-                "Copied {} to clipboard. Will clear in {} seconds.",
-                opts.input.unwrap(),
-                settings.clip_time
-            )?;
-            Ok(())
+            clip(buffer, pw, settings.clip_time, opts)
         } else {
             write!(buffer, "{}", pw)?;
             Ok(())
