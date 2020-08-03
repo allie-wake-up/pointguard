@@ -107,7 +107,16 @@ mod tests {
             get_test_settings(),
         )
         .unwrap();
-        assert_eq!(String::from_utf8(result).unwrap().trim(), "test");
+        assert_eq!(String::from_utf8(result).unwrap().trim(), "test\nline2");
+    }
+
+    #[test]
+    fn print_password_line_2() {
+        let mut result: Vec<u8> = vec![];
+        let mut opts = Show::new(Some(String::from("test")));
+        opts.line = Some(2);
+        show(&mut result, opts, get_test_settings()).unwrap();
+        assert_eq!(String::from_utf8(result).unwrap().trim(), "line2");
     }
 
     #[test]
