@@ -136,11 +136,11 @@ mod tests {
         let mut result: Vec<u8> = vec![];
         show(
             &mut result,
-            Show::new(Some(String::from("dir"))),
+            Show::new(Some(String::from("same"))),
             get_test_settings(),
         )
         .unwrap();
-        assert_eq!(String::from_utf8(result).unwrap().trim(), "dir");
+        assert_eq!(String::from_utf8(result).unwrap().trim(), "same");
     }
 
     #[test]
@@ -148,11 +148,11 @@ mod tests {
         let mut result: Vec<u8> = vec![];
         show(
             &mut result,
-            Show::new(Some(String::from("dir/test"))),
+            Show::new(Some(String::from("same/test"))),
             get_test_settings(),
         )
         .unwrap();
-        assert_eq!(String::from_utf8(result).unwrap().trim(), "dir/test");
+        assert_eq!(String::from_utf8(result).unwrap().trim(), "same/test");
     }
 
     #[test]
@@ -162,7 +162,7 @@ mod tests {
         let result_string = String::from_utf8(result).unwrap();
         assert!(result_string.contains("test"));
         assert!(result_string.contains("pointguard.dev"));
-        assert!(result_string.contains("dir"));
+        assert!(result_string.contains("same"));
         assert!(result_string.contains("unique"));
         assert!(!result_string.contains("notinstore"));
     }
@@ -172,14 +172,14 @@ mod tests {
         let mut result: Vec<u8> = vec![];
         show(
             &mut result,
-            Show::new(Some(String::from("dir/"))),
+            Show::new(Some(String::from("same/"))),
             get_test_settings(),
         )
         .unwrap();
         let result_string = String::from_utf8(result).unwrap();
         assert!(result_string.contains("test"));
         assert!(result_string.contains("unique"));
-        assert!(result_string.contains("dir"));
+        assert!(result_string.contains("same"));
         assert!(!result_string.contains("notinstore"));
     }
 }

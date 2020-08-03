@@ -147,18 +147,17 @@ mod tests {
 
     #[test]
     fn build_tree_test() {
-        let mut tree = build_tree(&PathBuf::from("test-store-enc"), None).unwrap();
-        tree.sort();
+        let tree = build_tree(&PathBuf::from("test-store-enc"), None).unwrap();
         assert_eq!(tree.file_stem, "Point Guard Password Store");
         assert_eq!(tree.children.len(), 6);
-        assert_eq!(tree.children[0].file_stem, "dir");
-        assert_eq!(tree.children[0].children.len(), 0);
-        assert_eq!(tree.children[1].file_stem, "dir");
-        assert_eq!(tree.children[1].children.len(), 2);
-        assert_eq!(tree.children[1].children[0].file_stem, "test");
-        assert_eq!(tree.children[1].children[0].children.len(), 0);
-        assert_eq!(tree.children[2].file_stem, "empty");
-        assert_eq!(tree.children[3].file_stem, "empty1");
-        assert_eq!(tree.children[4].file_stem, "pointguard.dev");
+        assert_eq!(tree.children[0].file_stem, "empty");
+        assert_eq!(tree.children[1].file_stem, "empty1");
+        assert_eq!(tree.children[2].file_stem, "pointguard.dev");
+        assert_eq!(tree.children[3].file_stem, "same");
+        assert_eq!(tree.children[3].children.len(), 0);
+        assert_eq!(tree.children[4].file_stem, "same");
+        assert_eq!(tree.children[4].children.len(), 2);
+        assert_eq!(tree.children[4].children[0].file_stem, "test");
+        assert_eq!(tree.children[4].children[0].children.len(), 0);
     }
 }
