@@ -10,30 +10,6 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v2
-    - name: Setup rust toolchain
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        components: rustfmt, clippy
-    - name: Setup gpg
-      run: |
-        echo "${{secrets.GPG_PUBLIC_KEY}}" | gpg --import
-        echo "${{secrets.GPG_PRIVATE_KEY}}" | gpg --import
-        echo "${{secrets.GPG_OWNERTRUST}}" | gpg --import-ownertrust
-        ./setup-tests.sh `gpg --list-keys --with-colons | awk -F: '/^fpr/ { print $10 }'`
-    - name: Clippy
-      run: cargo clippy
-    - name: RustFmt
-      run: cargo fmt -- --check
-    - name: Run tests
-      run: cargo test --verbose
-
   build:
     name: Build on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -43,9 +19,27 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Setup xcb
+      if: ${{ matrix.os == 'ubuntu-latest' }}
+      run: sudo apt-get install libxcb-xfixes0-dev
     - name: Setup rust toolchain
       uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
+        components: rustfmt, clippy
+    - name: Setup gpg
+      if: ${{ matrix.os == 'ubuntu-latest' }}
+      run: |
+        echo "${{secrets.GPG_PUBLIC_KEY}}" | gpg --import
+        echo "${{secrets.GPG_PRIVATE_KEY}}" | gpg --import
+        echo "${{secrets.GPG_OWNERTRUST}}" | gpg --import-ownertrust
+        ./setup-tests.sh `gpg --list-keys --with-colons | awk -F: '/^fpr/ { print $10 }'`
+    - name: Clippy
+      run: cargo clippy
+    - name: RustFmt
+      run: cargo fmt -- --check
     - name: Build
       run: cargo build --verbose
+    - name: Run tests
+      if: ${{ matrix.os == 'ubuntu-latest' }}
+      run: cargo test --verbose
