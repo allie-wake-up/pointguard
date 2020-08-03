@@ -13,11 +13,10 @@ echo "$1" > test-store-enc/.gpg-id
 function encrypt {
     for file in $1/*
     do
-        if [ -d $file ] 
-        then
+        if [ -d $file ]; then
             mkdir -p "../test-store-enc/$file"
             encrypt $file
-        else
+        elif [ -f $file ]; then
             gpg --yes --batch -o "../test-store-enc/$file" --recipient "$KEY" -e "$file" 
         fi
     done

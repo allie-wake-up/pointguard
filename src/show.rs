@@ -1,4 +1,4 @@
-use crate::error::{PointGuardError, Result};
+use crate::error::Result;
 use crate::gpg;
 use crate::opts::Show;
 use crate::settings::Settings;
@@ -10,63 +10,10 @@ use std::{
     path::Path,
     process::{Command, Stdio},
 };
-use walkdir::{DirEntry, WalkDir};
 
 mod pgtree;
-use pgtree::TreeBuilder;
 
-fn is_hidden(entry: &DirEntry) -> bool {
-    entry
-        .file_name()
-        .to_str()
-        .map(|s| s.starts_with('.'))
-        .unwrap_or(false)
-}
-
-fn display_path(path: &Path) -> Result<String> {
-    Ok(path
-        .file_stem()
-        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "Found a file with no name"))?
-        .to_str()
-        .ok_or_else(|| {
-            io::Error::new(io::ErrorKind::InvalidData, "File name is not valid unicode")
-        })?
-        .to_string())
-}
-
-fn print_tree(buffer: &mut dyn io::Write, path: &Path, input: Option<String>) -> Result<()> {
-    let mut builder =
-        TreeBuilder::new(input.unwrap_or_else(|| String::from("Point Guard Password Store")));
-    let walker = WalkDir::new(&path).into_iter();
-    let mut depth = 1;
-    for entry in walker.filter_entry(|e| !is_hidden(e)) {
-        let entry = match entry {
-            Ok(entry) => entry,
-            // TODO: should this return an error?
-            Err(_e) => continue,
-        };
-        if entry.depth() == 0 {
-            continue;
-        }
-        let path = entry.path();
-        if path.is_dir() {
-            builder.begin_child(display_path(path)?);
-            depth += 1;
-        } else if entry.depth() == depth {
-            builder.add_empty_child(display_path(path)?);
-        } else {
-            builder.end_child();
-            builder.add_empty_child(display_path(path)?);
-            depth -= 1;
-        }
-    }
-    let mut root = builder.build();
-    root.sort();
-    output::write_tree(&root, buffer)?;
-    Ok(())
-}
-
-fn clip(buffer: &mut dyn io::Write, pw: String, clip_time: u64, opts: Show) -> Result<()> {
+fn clip(buffer: &mut dyn io::Write, pw: &str, clip_time: u64, opts: Show) -> Result<()> {
     let exe = env::current_exe()?;
     let mut child = Command::new(exe)
         .arg("clip")
@@ -74,12 +21,8 @@ fn clip(buffer: &mut dyn io::Write, pw: String, clip_time: u64, opts: Show) -> R
         .stdin(Stdio::piped())
         .spawn()?;
     let child_stdin = child.stdin.as_mut();
-    let child_stdin = child_stdin.ok_or_else(|| {
-        PointGuardError::Other(anyhow!("Error launching child to copy to clipboard."))
-    })?;
-    let pw = pw.lines().next().ok_or_else(|| 
-        PointGuardError::Other(anyhow!("Error reading the line from the password file."))
-    )?;
+    let child_stdin =
+        child_stdin.ok_or_else(|| anyhow!("Error launching child to copy to clipboard."))?;
     child_stdin.write_all(pw.as_bytes())?;
     writeln!(
         buffer,
@@ -88,6 +31,31 @@ fn clip(buffer: &mut dyn io::Write, pw: String, clip_time: u64, opts: Show) -> R
         clip_time
     )?;
     Ok(())
+}
+
+fn show_password(
+    buffer: &mut dyn io::Write,
+    file: &Path,
+    clip_time: u64,
+    opts: Show,
+) -> Result<()> {
+    let pw = gpg::decrypt(file)?;
+    let pw = match &opts.line {
+        Some(line) => pw
+            .lines()
+            .nth(line - 1)
+            .ok_or_else(|| anyhow!("Error reading line {} of the password file", line)),
+        None => Ok(&pw[..]),
+    }?;
+    if opts.clip {
+        clip(buffer, pw, clip_time, opts)
+    } else {
+        match opts.line {
+            Some(_) => writeln!(buffer, "{}", pw)?,
+            None => write!(buffer, "{}", pw)?,
+        }
+        Ok(())
+    }
 }
 
 pub fn show(buffer: &mut dyn io::Write, opts: Show, settings: Settings) -> Result<()> {
@@ -99,15 +67,11 @@ pub fn show(buffer: &mut dyn io::Write, opts: Show, settings: Settings) -> Resul
         None => (settings.dir.clone(), settings.dir),
     };
     if file.exists() && !file.is_dir() {
-        let pw = gpg::decrypt(&file)?;
-        if opts.clip {
-            clip(buffer, pw, settings.clip_time, opts)
-        } else {
-            write!(buffer, "{}", pw)?;
-            Ok(())
-        }
+        show_password(buffer, &file, settings.clip_time, opts)
     } else if path.is_dir() {
-        print_tree(buffer, &path, opts.input)
+        let root = pgtree::build_tree(&path, opts.input)?;
+        output::write_tree(&root, buffer)?;
+        Ok(())
     } else {
         Err(io::Error::new(
             io::ErrorKind::NotFound,
