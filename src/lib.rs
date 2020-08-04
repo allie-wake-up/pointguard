@@ -1,3 +1,4 @@
+mod clip;
 mod error;
 mod gpg;
 mod opts;
@@ -9,20 +10,9 @@ pub use opts::{Opts, Show, SubCommand};
 pub use settings::Settings;
 
 pub fn run(buffer: &mut dyn std::io::Write, opts: Opts, settings: Settings) -> error::Result<()> {
-    let input = opts.input;
-    match opts
-        .subcmd
-        .unwrap_or_else(|| SubCommand::Show(Show::new(input)))
-    {
-        SubCommand::Test(t) => {
-            if t.debug {
-                println!("Printing debug info...");
-                Ok(())
-            } else {
-                println!("Printing normally...");
-                Ok(())
-            }
-        }
+    let show_opts = opts.show;
+    match opts.subcmd.unwrap_or_else(|| SubCommand::Show(show_opts)) {
+        SubCommand::Clip(clip_opts) => clip::clip(clip_opts),
         SubCommand::Show(show_opts) => show::show(buffer, show_opts, settings),
     }
 }
