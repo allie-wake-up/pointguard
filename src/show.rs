@@ -40,7 +40,12 @@ fn show_password(
     opts: Show,
 ) -> Result<()> {
     let pw = gpg::decrypt(file)?;
-    let pw = match &opts.line {
+    let line = if opts.clip && opts.line.is_none() {
+        Some(1)
+    } else {
+        opts.line
+    };
+    let pw = match line {
         Some(line) => pw
             .lines()
             .nth(line - 1)
