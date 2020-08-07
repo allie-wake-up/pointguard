@@ -1,9 +1,10 @@
+use crate::files;
 use ptree::item::TreeItem;
 use ptree::style::Style;
 use std::borrow::Cow;
-use std::io::{self, Result, Write};
+use std::io::{Result, Write};
 use std::path::Path;
-use walkdir::{DirEntry, WalkDir};
+use walkdir::WalkDir;
 
 #[derive(Debug)]
 pub struct TreeBuilder {
@@ -83,31 +84,12 @@ impl TreeItem for Tree {
     }
 }
 
-fn is_hidden(entry: &DirEntry) -> bool {
-    entry
-        .file_name()
-        .to_str()
-        .map(|s| s.starts_with('.'))
-        .unwrap_or(false)
-}
-
-fn display_path(path: &Path) -> Result<String> {
-    Ok(path
-        .file_stem()
-        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "Found a file with no name"))?
-        .to_str()
-        .ok_or_else(|| {
-            io::Error::new(io::ErrorKind::InvalidData, "File name is not valid unicode")
-        })?
-        .to_string())
-}
-
 pub fn build_tree(path: &Path, input: Option<String>) -> Result<Tree> {
     let mut builder =
         TreeBuilder::new(input.unwrap_or_else(|| String::from("Point Guard Password Store")));
     let walker = WalkDir::new(&path).into_iter();
     let mut depth = 1;
-    for entry in walker.filter_entry(|e| !is_hidden(e)) {
+    for entry in walker.filter_entry(files::is_not_hidden) {
         let entry = match entry {
             Ok(entry) => entry,
             // TODO: should this return an error?
@@ -119,19 +101,19 @@ pub fn build_tree(path: &Path, input: Option<String>) -> Result<Tree> {
         let path = entry.path();
         if entry.depth() == depth {
             if path.is_dir() {
-                builder.begin_child(display_path(path)?);
+                builder.begin_child(files::display_stem(path)?.to_string());
                 depth += 1;
             } else {
-                builder.add_empty_child(display_path(path)?);
+                builder.add_empty_child(files::display_stem(path)?.to_string());
             }
         } else {
             builder.end_child();
             depth -= 1;
             if path.is_dir() {
-                builder.begin_child(display_path(path)?);
+                builder.begin_child(files::display_stem(path)?.to_string());
                 depth += 1;
             } else {
-                builder.add_empty_child(display_path(path)?);
+                builder.add_empty_child(files::display_stem(path)?.to_string());
             }
         }
     }

@@ -23,6 +23,8 @@ pub enum SubCommand {
     Clip(Clip),
     #[clap(name="show", aliases = &["ls", "show"])]
     Show(Show),
+    #[clap(name="search", aliases = &["find"])]
+    Search,
 }
 
 /// A subcommand for copying to the clipboard
@@ -47,10 +49,10 @@ pub struct Show {
 }
 
 impl Show {
-    pub fn new(input: Option<String>) -> Self {
+    pub fn new(input: Option<String>, clip: bool) -> Self {
         Show {
             input,
-            clip: false,
+            clip,
             line: None,
         }
     }
