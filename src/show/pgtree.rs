@@ -135,6 +135,10 @@ pub fn build_tree(path: &Path, input: Option<String>) -> Result<Tree> {
             }
         }
     }
+    while depth > 1 {
+        builder.end_child();
+        depth -= 1;
+    }
     let mut root = builder.build();
     root.sort();
     Ok(root)
