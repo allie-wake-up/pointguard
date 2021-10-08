@@ -1,7 +1,7 @@
 [package]
 name = "pointguard"
 version = "0.1.0"
-authors = ["Andrew Stephan <andrew@pointguard.dev>"]
+authors = ["Allie Stephan <allie@pointguard.dev>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
