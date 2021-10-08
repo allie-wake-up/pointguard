@@ -2,7 +2,12 @@
 name = "pointguard"
 version = "0.1.0"
 authors = ["Allie Stephan <allie@pointguard.dev>"]
+description = "pointguard is a cli password manager that is compatible with password-store"
+repository = "https://github.com/thekiteeatingtree/pointguard"
+license = "MIT / Apache-2.0"
+keywords = ["password", "pass", "password-store"]
 edition = "2018"
+readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [[bin]]
