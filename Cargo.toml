@@ -1,9 +1,9 @@
 [package]
 name = "pointguard"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Allie Stephan <allie@pointguard.dev>"]
 description = "pointguard is a cli password manager that is compatible with password-store"
-repository = "https://github.com/thekiteeatingtree/pointguard"
+repository = "https://github.com/actuallyallie/pointguard"
 license = "MIT / Apache-2.0"
 keywords = ["password", "pass", "password-store"]
 edition = "2018"
